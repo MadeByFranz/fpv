@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RASEBORG FPV — Cinematic FPV drone film</title>
+<meta name="description" content="Cinematic FPV drone fly-throughs of homes, venues and construction sites in Raseborg / Raasepori and Western Uusimaa.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#060607;
+    --bg2:#0e0e11;
+    --line:#22222a;
+    --text:#ececf0;
+    --muted:#8a8a96;
+    --hot:#ff3b1f;      /* main accent */
+    --acid:#d4ff2a;     /* HUD accent */
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--text);font-family:"Space Grotesk",system-ui,sans-serif;line-height:1.5;overflow-x:hidden}
+  a{color:inherit;text-decoration:none}
+  .mono{font-family:"JetBrains Mono",monospace}
+  .wrap{width:min(1200px,92vw);margin:0 auto}
+
+  /* grain overlay */
+  body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:100;opacity:.06;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+  /* NAV */
+  nav{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:space-between;
+    padding:18px 4vw;background:linear-gradient(#060607ee,#06060700)}
+  .logo{font-family:Anton,sans-serif;font-size:22px;letter-spacing:.04em}
+  .logo span{color:var(--hot)}
+  .navlinks{display:flex;gap:28px;font-size:14px;text-transform:uppercase;letter-spacing:.12em}
+  .navlinks a:hover{color:var(--hot)}
+  .lang{display:flex;gap:4px}
+  .lang button{background:none;border:1px solid var(--line);color:var(--muted);font:700 12px "JetBrains Mono",monospace;padding:6px 9px;cursor:pointer}
+  .lang button.on{border-color:var(--hot);color:var(--text);background:#ff3b1f22}
+  @media(max-width:760px){.navlinks{display:none}}
+
+  /* HERO */
+  .hero{position:relative;isolation:isolate;height:100svh;min-height:620px;display:flex;align-items:flex-end;overflow:hidden;border-bottom:1px solid var(--line)}
+  .hero video,.hero .fallback{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .hero .fallback{background:
+      radial-gradient(ellipse at 70% 30%,#ff3b1f33,transparent 55%),
+      radial-gradient(ellipse at 20% 80%,#d4ff2a14,transparent 50%),
+      repeating-linear-gradient(115deg,#ffffff05 0 2px,transparent 2px 90px),
+      #08080a;
+    animation:drift 14s linear infinite}
+  @keyframes drift{to{background-position:0 0,0 0,900px 0,0 0}}
+  .hero::before{content:"";position:absolute;inset:0;z-index:1;
+    background:linear-gradient(0deg,#060607 4%,#06060700 60%),repeating-linear-gradient(0deg,#0000 0 3px,#00000040 3px 4px)}
+
+  /* FPV OSD */
+  .osd{position:absolute;inset:90px 4vw 0;z-index:2;pointer-events:none;color:var(--acid);font:700 13px "JetBrains Mono",monospace;text-shadow:0 0 6px #d4ff2a88}
+  .osd .tl{position:absolute;top:0;left:0}
+  .osd .tr{position:absolute;top:0;right:0;text-align:right}
+  .osd .rec{color:var(--hot);text-shadow:0 0 6px #ff3b1f}
+  .osd .rec i{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--hot);margin-right:6px;animation:blink 1s steps(2) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .cross{position:absolute;top:42%;left:72%;width:70px;height:70px;transform:translate(-50%,-50%)}
+  .cross::before,.cross::after{content:"";position:absolute;background:var(--acid);box-shadow:0 0 6px #d4ff2a}
+  .cross::before{left:0;right:0;top:50%;height:2px}
+  .cross::after{top:0;bottom:0;left:50%;width:2px;transform:scaleY(.35)}
+  .corner{position:absolute;width:26px;height:26px;border:2px solid var(--acid);opacity:.7}
+  .c1{top:0;left:0;border-right:0;border-bottom:0;display:none}
+  @media(max-width:760px){.osd{font-size:11px}.cross{display:none}}
+
+  .hero-content{position:relative;z-index:3;padding:0 4vw 9vh;max-width:1100px}
+  .kicker{font:700 13px "JetBrains Mono",monospace;letter-spacing:.2em;color:var(--hot);text-transform:uppercase;margin-bottom:18px}
+  h1{font-family:Anton,sans-serif;font-weight:400;font-size:clamp(64px,13vw,200px);line-height:.86;text-transform:uppercase;letter-spacing:-.01em}
+  h1 em{font-style:normal;color:transparent;-webkit-text-stroke:2px var(--text)}
+  .sub{max-width:520px;font-size:clamp(16px,2vw,20px);color:#cfcfd6;margin:22px 0 32px}
+  .btns{display:flex;gap:14px;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:10px;padding:16px 28px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:14px;
+    clip-path:polygon(0 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%);transition:.2s}
+  .btn.primary{background:var(--hot);color:#000}
+  .btn.primary:hover{background:var(--text)}
+  .btn.ghost{border:1px solid #ffffff55;clip-path:none}
+  .btn.ghost:hover{border-color:var(--hot);color:var(--hot)}
+
+  /* TICKER */
+  .ticker{overflow:hidden;background:var(--hot);color:#000;border-block:1px solid #000;transform:rotate(-1.2deg) scale(1.02);margin:-12px 0 0;position:relative;z-index:4}
+  .ticker .track{display:flex;width:max-content;animation:scroll 28s linear infinite}
+  .ticker span{font-family:Anton,sans-serif;font-size:30px;text-transform:uppercase;padding:10px 0;white-space:nowrap}
+  @keyframes scroll{to{transform:translateX(-50%)}}
+
+  /* SECTIONS */
+  section{padding:120px 0;position:relative}
+  .label{font:700 12px "JetBrains Mono",monospace;letter-spacing:.25em;color:var(--hot);text-transform:uppercase;display:flex;align-items:center;gap:12px;margin-bottom:16px}
+  .label::before{content:"";width:34px;height:2px;background:var(--hot)}
+  h2{font-family:Anton,sans-serif;font-weight:400;font-size:clamp(44px,7vw,96px);line-height:.92;text-transform:uppercase;margin-bottom:56px}
+
+  /* WORK */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .tile{position:relative;aspect-ratio:16/10;background:var(--bg2);border:1px solid var(--line);overflow:hidden;cursor:pointer}
+  .tile.big{grid-column:span 2;grid-row:span 2;aspect-ratio:auto}
+  .tile .ph{position:absolute;inset:0;background:
+      linear-gradient(135deg,#ff3b1f22,transparent 60%),
+      repeating-linear-gradient(-45deg,#ffffff06 0 10px,transparent 10px 20px);transition:transform .5s}
+  .tile:hover .ph{transform:scale(1.08)}
+  .tile .play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:64px;height:64px;border:2px solid var(--text);border-radius:50%;
+    display:grid;place-items:center;transition:.2s}
+  .tile .play::after{content:"";border-left:16px solid var(--text);border-top:10px solid transparent;border-bottom:10px solid transparent;margin-left:4px}
+  .tile:hover .play{border-color:var(--hot);background:#ff3b1f33}
+  .tile .meta{position:absolute;left:16px;bottom:14px;right:16px;display:flex;justify-content:space-between;align-items:flex-end}
+  .tile h3{font-family:Anton,sans-serif;font-weight:400;font-size:24px;text-transform:uppercase}
+  .tile .tag{font:700 11px "JetBrains Mono",monospace;color:var(--acid);letter-spacing:.1em}
+  .tile .soon{position:absolute;top:14px;left:16px;font:700 11px "JetBrains Mono",monospace;color:var(--muted);letter-spacing:.15em}
+  @media(max-width:860px){.grid{grid-template-columns:1fr 1fr}.tile.big{grid-column:span 2;grid-row:auto;aspect-ratio:16/10}}
+  @media(max-width:520px){.grid{grid-template-columns:1fr}.tile.big{grid-column:auto}}
+
+  /* SERVICES */
+  .services{background:var(--bg2);border-block:1px solid var(--line)}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .card{position:relative;border:1px solid var(--line);padding:36px 30px 32px;background:var(--bg);transition:.25s;
+    clip-path:polygon(0 0,calc(100% - 28px) 0,100% 28px,100% 100%,0 100%)}
+  .card:hover{border-color:var(--hot);transform:translateY(-6px)}
+  .card.hot{border-color:var(--hot);background:linear-gradient(180deg,#ff3b1f18,var(--bg) 60%)}
+  .card .num{font:700 13px "JetBrains Mono",monospace;color:var(--muted)}
+  .card h3{font-family:Anton,sans-serif;font-weight:400;font-size:34px;text-transform:uppercase;margin:14px 0 10px;line-height:1}
+  .card p{color:var(--muted);font-size:15px;min-height:72px}
+  .price{margin-top:26px;font-family:Anton,sans-serif;font-size:46px}
+  .price small{font:700 12px "JetBrains Mono",monospace;color:var(--muted);letter-spacing:.15em;display:block;margin-bottom:2px}
+  .card ul{list-style:none;margin-top:20px;border-top:1px solid var(--line);padding-top:18px}
+  .card li{font-size:14px;padding:5px 0;display:flex;gap:10px}
+  .card li::before{content:"▸";color:var(--hot)}
+  .badge{position:absolute;top:18px;right:40px;font:700 10px "JetBrains Mono",monospace;background:var(--hot);color:#000;padding:4px 8px;letter-spacing:.15em}
+  @media(max-width:900px){.cards{grid-template-columns:1fr}}
+
+  /* PROCESS */
+  .steps{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line)}
+  .step{padding:34px 26px 10px 0;border-right:1px solid var(--line);margin-right:26px}
+  .step:last-child{border-right:0}
+  .step .n{font-family:Anton,sans-serif;font-size:72px;color:transparent;-webkit-text-stroke:1px var(--hot);line-height:1}
+  .step h4{font-size:20px;text-transform:uppercase;letter-spacing:.06em;margin:12px 0 8px}
+  .step p{color:var(--muted);font-size:15px}
+  @media(max-width:860px){.steps{grid-template-columns:1fr 1fr}.step{border-right:0;margin-right:0;border-bottom:1px solid var(--line);padding-bottom:26px}}
+
+  /* CONTACT */
+  .contact{background:radial-gradient(ellipse at 85% 10%,#ff3b1f22,transparent 50%),var(--bg)}
+  .contact-grid{display:grid;grid-template-columns:1fr 1.2fr;gap:60px}
+  .direct a{display:block;font-family:Anton,sans-serif;font-size:clamp(26px,3.4vw,42px);text-transform:uppercase;margin-bottom:10px;transition:.2s;word-break:break-all}
+  .direct a:hover{color:var(--hot);transform:translateX(8px)}
+  .direct p{color:var(--muted);margin:22px 0 0;max-width:360px}
+  form{display:grid;gap:14px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  input,select,textarea{width:100%;background:var(--bg2);border:1px solid var(--line);color:var(--text);padding:16px;font:inherit;font-size:15px;outline:none;transition:.2s}
+  input:focus,select:focus,textarea:focus{border-color:var(--hot)}
+  textarea{min-height:140px;resize:vertical}
+  form .btn{border:0;cursor:pointer;justify-self:start;font-family:inherit}
+  @media(max-width:860px){.contact-grid{grid-template-columns:1fr}.row{grid-template-columns:1fr}}
+
+  footer{border-top:1px solid var(--line);padding:34px 0;font:12px "JetBrains Mono",monospace;color:var(--muted)}
+  footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+  footer a:hover{color:var(--hot)}
+
+  /* reveal on scroll */
+  .rv{opacity:0;transform:translateY(40px);transition:opacity .8s,transform .8s}
+  .rv.in{opacity:1;transform:none}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.rv{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="#top" class="logo">RASEBORG<span>/</span>FPV</a>
+  <div class="navlinks">
+    <a href="#work" data-i18n="nav_work">Work</a>
+    <a href="#services" data-i18n="nav_services">Services</a>
+    <a href="#process" data-i18n="nav_process">Process</a>
+    <a href="#contact" data-i18n="nav_contact">Contact</a>
+  </div>
+  <div class="lang">
+    <button data-lang="fi">FI</button>
+    <button data-lang="sv">SV</button>
+    <button data-lang="en" class="on">EN</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <!-- Drop your showreel here: save it as showreel.mp4 next to this file (keep it under ~10 MB) -->
+  <video autoplay muted loop playsinline poster="" onerror="this.remove()">
+    <source src="showreel.mp4" type="video/mp4">
+  </video>
+  <div class="fallback" style="z-index:-1"></div>
+
+  <div class="osd" aria-hidden="true">
+    <div class="tl">
+      <div class="rec"><i></i>REC <span id="t">00:00:00</span></div>
+      <div>4K · 60FPS · O4</div>
+    </div>
+    <div class="tr">
+      <div>🔋 <span id="v">4.32</span>V</div>
+      <div>RSSI 99 · LQ 100</div>
+      <div>ALT <span id="alt">1.4</span>m</div>
+    </div>
+    <div class="cross"></div>
+  </div>
+
+  <div class="hero-content">
+    <div class="kicker" data-i18n="kicker">FPV drone film · Raseborg / Raasepori</div>
+    <h1 data-i18n-html="h1">One take.<br><em>No limits.</em></h1>
+    <p class="sub" data-i18n="sub">Cinematic FPV fly-throughs of homes, venues and builds — through doors, over tables and out the window. One continuous shot.</p>
+    <div class="btns">
+      <a href="#contact" class="btn primary" data-i18n="cta">Get a quote →</a>
+      <a href="#work" class="btn ghost" data-i18n="cta2">▶ Watch the reel</a>
+    </div>
+  </div>
+</header>
+
+<div class="ticker" aria-hidden="true">
+  <div class="track" id="ticker"></div>
+</div>
+
+<!-- WORK -->
+<section id="work">
+  <div class="wrap">
+    <div class="label rv" data-i18n="work_label">Selected work</div>
+    <h2 class="rv" data-i18n-html="work_h">Fly through<br>the frame</h2>
+
+    <!-- To add a video: replace a tile's .ph div with
+         <iframe src="https://www.youtube.com/embed/VIDEO_ID?rel=0" style="position:absolute;inset:0;width:100%;height:100%;border:0" allowfullscreen></iframe> -->
+    <div class="grid">
+      <div class="tile big rv"><div class="ph"></div><span class="soon" data-i18n="soon">// coming soon</span><div class="play"></div>
+        <div class="meta"><h3 data-i18n="w1">Villa one-take</h3><span class="tag">4K · 1:42</span></div></div>
+      <div class="tile rv"><div class="ph"></div><span class="soon" data-i18n="soon">// coming soon</span><div class="play"></div>
+        <div class="meta"><h3 data-i18n="w2">Restaurant</h3><span class="tag">REEL</span></div></div>
+      <div class="tile rv"><div class="ph"></div><span class="soon" data-i18n="soon">// coming soon</span><div class="play"></div>
+        <div class="meta"><h3 data-i18n="w3">Sauna & cabin</h3><span class="tag">TOUR</span></div></div>
+      <div class="tile rv"><div class="ph"></div><span class="soon" data-i18n="soon">// coming soon</span><div class="play"></div>
+        <div class="meta"><h3 data-i18n="w4">Build progress</h3><span class="tag">SITE</span></div></div>
+      <div class="tile rv"><div class="ph"></div><span class="soon" data-i18n="soon">// coming soon</span><div class="play"></div>
+        <div class="meta"><h3 data-i18n="w5">Venue</h3><span class="tag">EVENT</span></div></div>
+      <div class="tile rv"><div class="ph"></div><span class="soon" data-i18n="soon">// coming soon</span><div class="play"></div>
+        <div class="meta"><h3 data-i18n="w6">Workshop</h3><span class="tag">BRAND</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section class="services" id="services">
+  <div class="wrap">
+    <div class="label rv" data-i18n="svc_label">Services</div>
+    <h2 class="rv" data-i18n-html="svc_h">Pick your<br>flight plan</h2>
+    <div class="cards">
+      <div class="card rv">
+        <div class="num">01</div>
+        <h3 data-i18n="s1">Social reel</h3>
+        <p data-i18n="s1p">A punchy vertical clip for Instagram, TikTok and Reels. Built to stop the scroll.</p>
+        <div class="price"><small data-i18n="from">From</small>€250</div>
+        <ul>
+          <li data-i18n="s1a">15–30 s, 9:16</li>
+          <li data-i18n="s1b">Edit + licensed music</li>
+          <li data-i18n="s1c">Delivered in 3 days</li>
+        </ul>
+      </div>
+      <div class="card hot rv">
+        <span class="badge" data-i18n="popular">POPULAR</span>
+        <div class="num">02</div>
+        <h3 data-i18n="s2">Property & venue tour</h3>
+        <p data-i18n="s2p">One continuous fly-through of your home, Airbnb, restaurant or venue.</p>
+        <div class="price"><small data-i18n="from">From</small>€450</div>
+        <ul>
+          <li data-i18n="s2a">1–2 min one-take, 4K</li>
+          <li data-i18n="s2b">Route planning on site</li>
+          <li data-i18n="s2c">16:9 + vertical cut</li>
+        </ul>
+      </div>
+      <div class="card rv">
+        <div class="num">03</div>
+        <h3 data-i18n="s3">Full package</h3>
+        <p data-i18n="s3p">Tour, reels and exterior shots. Also for construction progress and handover films.</p>
+        <div class="price"><small data-i18n="from">From</small>€750</div>
+        <ul>
+          <li data-i18n="s3a">Interior + exterior</li>
+          <li data-i18n="s3b">2 social reels included</li>
+          <li data-i18n="s3c">Raw footage on request</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROCESS -->
+<section id="process">
+  <div class="wrap">
+    <div class="label rv" data-i18n="proc_label">Process</div>
+    <h2 class="rv" data-i18n-html="proc_h">From brief<br>to final cut</h2>
+    <div class="steps">
+      <div class="step rv"><div class="n">01</div><h4 data-i18n="p1">Enquiry</h4><p data-i18n="p1p">Tell us the place, the vibe and where it will be posted.</p></div>
+      <div class="step rv"><div class="n">02</div><h4 data-i18n="p2">Route plan</h4><p data-i18n="p2p">We walk the space and plan the flight path and timing.</p></div>
+      <div class="step rv"><div class="n">03</div><h4 data-i18n="p3">Film</h4><p data-i18n="p3p">Several takes until the one-take is perfect. Safe, quiet, small drone.</p></div>
+      <div class="step rv"><div class="n">04</div><h4 data-i18n="p4">Edit & deliver</h4><p data-i18n="p4p">Colour, music and stabilisation. Ready in 3–5 days.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section class="contact" id="contact">
+  <div class="wrap">
+    <div class="label rv" data-i18n="ct_label">Contact</div>
+    <h2 class="rv" data-i18n-html="ct_h">Ready for<br>take-off?</h2>
+    <div class="contact-grid">
+      <div class="direct rv">
+        <a href="mailto:hello@example.com">hello@example.com</a>
+        <a href="tel:+358400000000">+358 40 000 0000</a>
+        <p data-i18n="ct_p">Raseborg, Hanko, Inkoo, Lohja and the rest of Western Uusimaa. Further on request.</p>
+      </div>
+      <!-- GitHub Pages can't process forms. Create a free form at formspree.io and paste your form ID below. -->
+      <form class="rv" action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+        <div class="row">
+          <input name="name" required data-i18n-ph="f_name" placeholder="Name">
+          <input name="email" type="email" required data-i18n-ph="f_email" placeholder="Email">
+        </div>
+        <div class="row">
+          <input name="phone" data-i18n-ph="f_phone" placeholder="Phone">
+          <select name="package">
+            <option data-i18n="s1">Social reel</option>
+            <option data-i18n="s2">Property & venue tour</option>
+            <option data-i18n="s3">Full package</option>
+            <option data-i18n="f_other">Something else</option>
+          </select>
+        </div>
+        <textarea name="message" data-i18n-ph="f_msg" placeholder="Where, what and when?"></textarea>
+        <button class="btn primary" type="submit" data-i18n="f_send">Send →</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>© <span id="yr"></span> RASEBORG/FPV · Y-tunnus 0000000-0 · <span data-i18n="op">Operator ID</span> FIN-XXXXXXXXXXXX</span>
+    <span><a href="#" data-i18n="privacy">Privacy policy</a> · <a href="https://instagram.com/" target="_blank" rel="noopener">Instagram</a> · <a href="https://youtube.com/" target="_blank" rel="noopener">YouTube</a></span>
+  </div>
+</footer>
+
+<script>
+const T = {
+  en:{nav_work:"Work",nav_services:"Services",nav_process:"Process",nav_contact:"Contact",
+    kicker:"FPV drone film · Raseborg / Raasepori",
+    h1:"One take.<br><em>No limits.</em>",
+    sub:"Cinematic FPV fly-throughs of homes, venues and builds — through doors, over tables and out the window. One continuous shot.",
+    cta:"Get a quote →",cta2:"▶ Watch the reel",
+    ticker:["Property tours","Venues","Restaurants","Construction","Airbnb","Events"],
+    work_label:"Selected work",work_h:"Fly through<br>the frame",soon:"// coming soon",
+    w1:"Villa one-take",w2:"Restaurant",w3:"Sauna & cabin",w4:"Build progress",w5:"Venue",w6:"Workshop",
+    svc_label:"Services",svc_h:"Pick your<br>flight plan",from:"From",popular:"POPULAR",
+    s1:"Social reel",s1p:"A punchy vertical clip for Instagram, TikTok and Reels. Built to stop the scroll.",s1a:"15–30 s, 9:16",s1b:"Edit + licensed music",s1c:"Delivered in 3 days",
+    s2:"Property & venue tour",s2p:"One continuous fly-through of your home, Airbnb, restaurant or venue.",s2a:"1–2 min one-take, 4K",s2b:"Route planning on site",s2c:"16:9 + vertical cut",
+    s3:"Full package",s3p:"Tour, reels and exterior shots. Also for construction progress and handover films.",s3a:"Interior + exterior",s3b:"2 social reels included",s3c:"Raw footage on request",
+    proc_label:"Process",proc_h:"From brief<br>to final cut",
+    p1:"Enquiry",p1p:"Tell us the place, the vibe and where it will be posted.",
+    p2:"Route plan",p2p:"We walk the space and plan the flight path and timing.",
+    p3:"Film",p3p:"Several takes until the one-take is perfect. Safe, quiet, small drone.",
+    p4:"Edit & deliver",p4p:"Colour, music and stabilisation. Ready in 3–5 days.",
+    ct_label:"Contact",ct_h:"Ready for<br>take-off?",
+    ct_p:"Raseborg, Hanko, Inkoo, Lohja and the rest of Western Uusimaa. Further on request.",
+    f_name:"Name",f_email:"Email",f_phone:"Phone",f_other:"Something else",f_msg:"Where, what and when?",f_send:"Send →",
+    op:"Operator ID",privacy:"Privacy policy"},
+  fi:{nav_work:"Työt",nav_services:"Palvelut",nav_process:"Prosessi",nav_contact:"Yhteys",
+    kicker:"FPV-dronevideo · Raasepori / Raseborg",
+    h1:"Yksi otto.<br><em>Ei rajoja.</em>",
+    sub:"Elokuvamaisia FPV-lentoja kodeissa, tiloissa ja työmailla — ovista läpi, pöytien yli ja ulos ikkunasta. Yksi yhtenäinen otos.",
+    cta:"Pyydä tarjous →",cta2:"▶ Katso showreel",
+    ticker:["Kiinteistöt","Tapahtumatilat","Ravintolat","Rakentaminen","Airbnb","Tapahtumat"],
+    work_label:"Töitä",work_h:"Lennä kuvan<br>läpi",soon:"// tulossa pian",
+    w1:"Huvila one-take",w2:"Ravintola",w3:"Sauna & mökki",w4:"Työmaan eteneminen",w5:"Tapahtumatila",w6:"Verstas",
+    svc_label:"Palvelut",svc_h:"Valitse<br>lentosuunnitelma",from:"Alkaen",popular:"SUOSITUIN",
+    s1:"Some-video",s1p:"Iskevä pystyvideo Instagramiin, TikTokiin ja Reelsiin. Pysäyttää selaamisen.",s1a:"15–30 s, 9:16",s1b:"Editointi + lisensoitu musiikki",s1c:"Toimitus 3 päivässä",
+    s2:"Kiinteistö- & tilavideo",s2p:"Yksi yhtenäinen lento kotisi, Airbnb:n, ravintolan tai tapahtumatilan läpi.",s2a:"1–2 min one-take, 4K",s2b:"Reitin suunnittelu paikan päällä",s2c:"16:9 + pystyversio",
+    s3:"Täysi paketti",s3p:"Kierros, somevideot ja ulkokuvat. Myös työmaan etenemis- ja luovutusvideot.",s3a:"Sisä- + ulkokuvat",s3b:"2 somevideota mukana",s3c:"Raakamateriaali pyynnöstä",
+    proc_label:"Prosessi",proc_h:"Ideasta<br>valmiiseen",
+    p1:"Yhteydenotto",p1p:"Kerro paikka, tunnelma ja missä video julkaistaan.",
+    p2:"Reittisuunnitelma",p2p:"Kävelemme tilan läpi ja suunnittelemme lentoreitin.",
+    p3:"Kuvaus",p3p:"Useita ottoja, kunnes one-take on täydellinen. Turvallinen ja pieni drone.",
+    p4:"Editointi & toimitus",p4p:"Värit, musiikki ja vakautus. Valmis 3–5 päivässä.",
+    ct_label:"Yhteys",ct_h:"Valmiina<br>lähtöön?",
+    ct_p:"Raasepori, Hanko, Inkoo, Lohja ja muu Länsi-Uusimaa. Kauemmaskin pyynnöstä.",
+    f_name:"Nimi",f_email:"Sähköposti",f_phone:"Puhelin",f_other:"Jotain muuta",f_msg:"Missä, mitä ja milloin?",f_send:"Lähetä →",
+    op:"Operaattoritunnus",privacy:"Tietosuoja"},
+  sv:{nav_work:"Arbeten",nav_services:"Tjänster",nav_process:"Process",nav_contact:"Kontakt",
+    kicker:"FPV-drönarfilm · Raseborg / Raasepori",
+    h1:"En tagning.<br><em>Inga gränser.</em>",
+    sub:"Filmiska FPV-flygningar genom hem, lokaler och byggen — genom dörrar, över bord och ut genom fönstret. En sammanhängande tagning.",
+    cta:"Begär offert →",cta2:"▶ Se showreel",
+    ticker:["Fastigheter","Lokaler","Restauranger","Byggen","Airbnb","Evenemang"],
+    work_label:"Utvalda arbeten",work_h:"Flyg genom<br>bilden",soon:"// kommer snart",
+    w1:"Villa one-take",w2:"Restaurang",w3:"Bastu & stuga",w4:"Byggets framsteg",w5:"Lokal",w6:"Verkstad",
+    svc_label:"Tjänster",svc_h:"Välj din<br>flygplan",from:"Från",popular:"POPULÄR",
+    s1:"Social reel",s1p:"Ett slagkraftigt vertikalt klipp för Instagram, TikTok och Reels.",s1a:"15–30 s, 9:16",s1b:"Klippning + licensierad musik",s1c:"Leverans på 3 dagar",
+    s2:"Fastighets- & lokaltur",s2p:"En sammanhängande flygning genom ditt hem, Airbnb, restaurang eller lokal.",s2a:"1–2 min one-take, 4K",s2b:"Ruttplanering på plats",s2c:"16:9 + vertikal version",
+    s3:"Helpaket",s3p:"Tur, reels och exteriörbilder. Även för byggets framsteg och överlåtelsefilmer.",s3a:"Interiör + exteriör",s3b:"2 reels ingår",s3c:"Råmaterial på begäran",
+    proc_label:"Process",proc_h:"Från idé<br>till färdig film",
+    p1:"Förfrågan",p1p:"Berätta om platsen, känslan och var filmen ska publiceras.",
+    p2:"Ruttplan",p2p:"Vi går igenom lokalen och planerar flygrutten.",
+    p3:"Filmning",p3p:"Flera tagningar tills one-taken sitter. Säker, tyst och liten drönare.",
+    p4:"Klipp & leverans",p4p:"Färg, musik och stabilisering. Klart på 3–5 dagar.",
+    ct_label:"Kontakt",ct_h:"Redo för<br>start?",
+    ct_p:"Raseborg, Hangö, Ingå, Lojo och resten av Västra Nyland. Längre bort på begäran.",
+    f_name:"Namn",f_email:"E-post",f_phone:"Telefon",f_other:"Något annat",f_msg:"Var, vad och när?",f_send:"Skicka →",
+    op:"Operatörs-ID",privacy:"Integritetspolicy"}
+};
+
+function setLang(l){
+  const d = T[l]; document.documentElement.lang = l;
+  document.querySelectorAll("[data-i18n]").forEach(e=>{ if(d[e.dataset.i18n]) e.textContent = d[e.dataset.i18n]; });
+  document.querySelectorAll("[data-i18n-html]").forEach(e=>{ e.innerHTML = d[e.dataset.i18nHtml]; });
+  document.querySelectorAll("[data-i18n-ph]").forEach(e=>{ e.placeholder = d[e.dataset.i18nPh]; });
+  const items = d.ticker.map(w=>`${w} &nbsp;✦&nbsp; `).join("");
+  document.getElementById("ticker").innerHTML = `<span>${items.repeat(3)}</span><span>${items.repeat(3)}</span>`;
+  document.querySelectorAll(".lang button").forEach(b=>b.classList.toggle("on", b.dataset.lang===l));
+  try{ localStorage.setItem("lang", l); }catch(e){}
+}
+document.querySelectorAll(".lang button").forEach(b=>b.onclick=()=>setLang(b.dataset.lang));
+let start; try{ start = localStorage.getItem("lang"); }catch(e){}
+setLang(start || ((navigator.language||"en").slice(0,2)==="fi" ? "fi" : (navigator.language||"").startsWith("sv") ? "sv" : "en"));
+
+/* OSD timer + flicker */
+const t0 = Date.now();
+setInterval(()=>{
+  const s = Math.floor((Date.now()-t0)/1000);
+  document.getElementById("t").textContent = [s/3600,(s/60)%60,s%60].map(n=>String(Math.floor(n)).padStart(2,"0")).join(":");
+  document.getElementById("v").textContent = Math.max(3.5, 4.32 - s*0.002).toFixed(2);
+  document.getElementById("alt").textContent = (1 + Math.random()*1.5).toFixed(1);
+}, 1000);
+
+/* reveal on scroll */
+const io = new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target);} }),{threshold:.15});
+document.querySelectorAll(".rv").forEach(el=>io.observe(el));
+
+document.getElementById("yr").textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
